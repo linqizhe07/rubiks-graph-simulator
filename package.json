@@ -1,7 +1,7 @@
 {
   "name": "rubiks-graph-simulator",
   "version": "1.0.0",
-  "description": "魔方图论二维模拟器：54 个节点是贴纸，9 个圆环是层，每一次转动都是圆环上的一次置换。",
+  "description": "魔方图论二维模拟器（2–7 阶，中英文，附新手教学）：节点是贴纸，圆环是层，每一次转动都是圆环上的一次置换。",
   "private": true,
   "license": "MIT",
   "scripts": {

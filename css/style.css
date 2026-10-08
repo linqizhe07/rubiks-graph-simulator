@@ -11,6 +11,8 @@
   --chip: #EFEBE2;
   --ok: #2B8A3E;
   --err: #C92A2A;
+  --guide: #6741D9;
+  --guide-ink: #4C2DB8;
   --radius: 20px;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   color-scheme: light;
@@ -48,6 +50,32 @@ html, body {
 }
 .brand h1 .dot { color: var(--muted); font-weight: 400; }
 .brand p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+
+.top-right { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px 14px; }
+.order { display: inline-flex; align-items: center; gap: 8px; }
+.order-label { font-size: 13px; color: var(--muted); }
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.seg button {
+  min-width: 34px;
+  height: 28px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-2);
+  font: 600 14px var(--mono);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.seg button:hover { background: var(--btn-hover); }
+.seg button[aria-pressed="true"] { background: var(--dark); color: #fff; }
+.seg.lang button { min-width: 38px; font: 600 13px -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif; }
 
 .meters { display: flex; gap: 8px; flex-shrink: 0; }
 .meter {
@@ -159,6 +187,9 @@ kbd {
 .btn.primary { background: var(--dark); border-color: var(--dark); color: #fff; }
 .btn.primary:hover { background: #24201C; }
 .btn.ghost { background: transparent; }
+.btn.accent { background: #EFEAFD; border-color: #D5C8FA; color: #4C2DB8; font-weight: 600; }
+.btn.accent:hover { background: #E5DCFC; }
+.btn.accent[aria-pressed="true"] { background: var(--guide); border-color: var(--guide); color: #fff; }
 
 .speed { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
 .speed input { width: 130px; accent-color: var(--dark); }
@@ -272,6 +303,93 @@ input[type="checkbox"] { accent-color: var(--dark); width: 15px; height: 15px; m
 }
 .foot a { color: var(--ink-2); }
 
+/* ---------- 新手教学面板（固定在底部） ---------- */
+.coach {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  width: min(1120px, calc(100vw - 24px));
+  max-height: min(48vh, 360px);
+  overflow: auto;
+  padding: 12px 16px 14px;
+  background: #FFFDF8;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px -18px rgba(42, 38, 33, 0.45), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  z-index: 40;
+}
+.coach[hidden] { display: none; }
+.coach-head { display: flex; align-items: center; gap: 10px; }
+.coach-chapters { display: flex; gap: 6px; flex: 1; overflow-x: auto; scrollbar-width: none; }
+.coach-chapters::-webkit-scrollbar { display: none; }
+.pill {
+  flex: none;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.pill.now { background: var(--guide); border-color: var(--guide); color: #fff; }
+.pill.done { color: var(--ok); border-color: #B7E1C1; background: #F1FAF3; }
+.pill.done::before { content: '✓ '; }
+.coach-close {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.coach-close:hover { color: var(--ink); background: var(--btn-hover); }
+.coach-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 24px;
+  margin-top: 10px;
+  align-items: end;
+}
+.coach-main h3 { margin: 0 0 4px; font-size: 16px; }
+.coach-main p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.7; }
+.coach-moves { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; }
+.coach-moves:empty { display: none; }
+.part { display: flex; flex-direction: column; gap: 3px; }
+.part-label { font-size: 11.5px; color: var(--muted); }
+.part-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.coach .chip { font: 600 13px var(--mono); padding: 2px 8px; border-radius: 7px; background: var(--chip); color: var(--ink-2); }
+.coach .chip.done { opacity: 0.4; text-decoration: line-through; }
+.coach .chip.now {
+  background: var(--guide);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(103, 65, 217, 0.2);
+  animation: now-pulse 1.15s ease-in-out infinite;
+}
+@keyframes now-pulse { 50% { box-shadow: 0 0 0 6px rgba(103, 65, 217, 0.08); } }
+.coach-hint { margin-top: 8px; font-size: 13.5px; color: var(--ink); }
+.coach-hint:empty { display: none; }
+.coach-hint b { font-family: var(--mono); color: var(--guide-ink); }
+.coach-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 156px; }
+.coach-actions .btn[hidden] { display: none; }
+.coach-feedback { min-height: 18px; font-size: 13px; text-align: center; color: var(--muted); }
+.coach-feedback.ok { color: var(--ok); }
+.coach-feedback.warn { color: #B35C00; }
+
+.teaching { padding-bottom: calc(var(--coach-h, 0px) + 28px); }
+.teaching .stage { height: clamp(360px, calc(100vh - var(--coach-h, 0px) - 150px), 720px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .coach .chip.now { animation: none; }
+}
+
 /* ---------- 窄屏 ---------- */
 @media (max-width: 860px) {
   .app { padding: 16px 16px 10px; }
@@ -284,6 +402,17 @@ input[type="checkbox"] { accent-color: var(--dark); width: 15px; height: 15px; m
   .cols { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .movepad { gap: 12px 14px; }
   .pad-grid { grid-template-columns: repeat(var(--cols, 6), minmax(36px, 44px)); }
+  .top-right { justify-content: flex-start; }
+  .coach { bottom: 8px; padding: 10px 12px 12px; max-height: 46vh; border-radius: 16px; }
+  .coach-body { grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 8px; }
+  .coach-main h3 { font-size: 15px; }
+  .coach-main p { font-size: 13.5px; line-height: 1.6; }
+  .coach-actions { flex-direction: row; flex-wrap: wrap; }
+  .coach-actions .btn { flex: 1 1 40%; }
+  .coach-feedback { flex-basis: 100%; }
+  .teaching .stage { height: auto; }
+  /* 教学时让图正好填满面板上方的空间，边看边跟着转 */
+  .teaching .graph-panel { height: clamp(280px, calc(100vh - var(--coach-h, 0px) - 24px), 640px); }
 }
 @media (max-width: 420px) {
   .caption { font-size: 11.5px; bottom: 6px; }
