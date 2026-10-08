@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>魔方图论模拟器</title>
+  <meta name="description" content="把魔方画成一张图：54 个节点是贴纸，9 个圆环是层，每一次转动都是圆环上的一次置换。高帧率 Canvas 动画，零依赖。">
+  <meta name="theme-color" content="#F3F0E8">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23A69F95' stroke-width='3'%3E%3Ccircle cx='32' cy='24' r='17'/%3E%3Ccircle cx='23' cy='39' r='17'/%3E%3Ccircle cx='41' cy='39' r='17'/%3E%3C/g%3E%3Ccircle cx='32' cy='14' r='5' fill='%23FCB43C' stroke='%233C342D' stroke-width='2'/%3E%3Ccircle cx='14' cy='45' r='5' fill='%232C6749' stroke='%233C342D' stroke-width='2'/%3E%3Ccircle cx='50' cy='45' r='5' fill='%23F88B30' stroke='%233C342D' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>魔方 <span class="dot">·</span> 图论模拟器</h1>
+        <p>54 个节点是贴纸，9 个圆环是层——每一次转动，都只是圆环上的一次置换。</p>
+      </div>
+      <div class="meters" title="帧率由 requestAnimationFrame 实测；渲染耗时为每帧绘制两块画布所用的时间">
+        <span class="meter"><b id="fps">—</b><small>FPS</small></span>
+        <span class="meter"><b id="ftime">—</b><small>ms / 帧</small></span>
+      </div>
+    </header>
+
+    <main class="stage" id="stage">
+      <section class="panel cube-panel" aria-label="三维视图">
+        <canvas id="cube3d" role="img" aria-label="三维魔方，与右侧图同步转动"></canvas>
+        <div class="caption">拖动旋转视角 · 双击复位</div>
+      </section>
+      <section class="panel graph-panel" aria-label="图论视图">
+        <canvas id="graph" role="img" aria-label="魔方的图论表示：9 个圆环与 54 个节点"></canvas>
+        <div class="caption" id="hint">点击节点转动它所在的面 · 点击圆环转动这一层 · 拖动节点沿圆环转动 · Shift / 右键反向</div>
+      </section>
+    </main>
+
+    <section class="controls">
+      <div class="toolbar">
+        <div class="btn-row">
+          <button id="btnScramble" class="btn primary" type="button">打乱</button>
+          <button id="btnSolve" class="btn" type="button" title="按相反顺序撤回全部转动">还原</button>
+          <button id="btnDemo" class="btn" type="button" title="打乱后再还原，像原视频那样">演示</button>
+          <span class="sep"></span>
+          <button id="btnUndo" class="btn" type="button" title="Ctrl/⌘ + Z">撤销</button>
+          <button id="btnRedo" class="btn" type="button" title="Ctrl/⌘ + Shift + Z">重做</button>
+          <button id="btnReset" class="btn ghost" type="button">重置</button>
+        </div>
+        <label class="speed">
+          <span>速度</span>
+          <input id="speed" type="range" min="0" max="100" value="50" aria-label="每步转动时长">
+          <output id="speedOut">300 ms</output>
+        </label>
+        <div class="toggles">
+          <label><input type="checkbox" id="optTrails" checked><span>拖尾</span></label>
+          <label><input type="checkbox" id="optLabels" checked><span>层名</span></label>
+          <label><input type="checkbox" id="optNames"><span>贴纸编号</span></label>
+          <label><input type="checkbox" id="opt3d" checked><span>3D 视图</span></label>
+        </div>
+        <div class="status"><span id="stateText">已还原</span><span class="muted"> · </span><span id="moveCount">0</span><span class="muted"> 步</span></div>
+      </div>
+
+      <div class="movepad" id="movepad"></div>
+
+      <div class="lab">
+        <div class="lab-row">
+          <input id="algo" type="text" placeholder="输入公式，例如 R U R' U'、(R U)6、[R, U]、[F: R U R' U']" spellcheck="false" autocomplete="off" aria-label="公式">
+          <select id="preset" aria-label="经典公式"><option value="">经典公式…</option></select>
+          <button id="btnPlay" class="btn" type="button">执行</button>
+          <button id="btnPlayInv" class="btn" type="button">执行逆</button>
+          <button id="btnRepeat" class="btn" type="button" disabled>重复至复原</button>
+          <label class="inline-toggle"><input type="checkbox" id="optArrows"><span>置换箭头</span></label>
+        </div>
+        <div class="lab-info" id="analysis"></div>
+      </div>
+
+      <div class="history" id="history" aria-label="转动记录"></div>
+    </section>
+
+    <section class="explain">
+      <h2>这张图是怎么来的</h2>
+      <div class="cols">
+        <div>
+          <h3>圆环 = 层</h3>
+          <p>魔方有 3 个转轴，每个轴 3 层，共 9 个可以转动的层。同一个轴的 3 层画成 3 个<strong>同心圆</strong>，三组同心圆的圆心构成一个等边三角形。R、U、F 三个面分别位于各自那组圆的圆心，它们的对面 L、D、B 在外侧。</p>
+        </div>
+        <div>
+          <h3>节点 = 贴纸</h3>
+          <p>每张贴纸恰好属于两个层（与它所在面平行的两个方向），所以把它画在这两个圆的<strong>交点</strong>上。两组同心圆 3×3 两两相交，交出两块 3×3 的点阵——正好是一对相对的面。9 个圆 × 12 个点 = 54 个点 × 2 个圆 = 108。</p>
+        </div>
+        <div>
+          <h3>转动 = 置换</h3>
+          <p>转一层，就是这个圆上的 12 个节点沿圆走过「一个面」（3 个节点）；如果是外层，圆心处或对侧的那个面再原地转 90°。于是魔方的每一步都只是这张图上的一次<strong>置换</strong>，魔方群就是由这 9 个圆生成的置换群，共 43,252,003,274,489,856,000 个状态。</p>
+        </div>
+      </div>
+      <div class="keys">
+        <h3>键盘</h3>
+        <p><kbd>U</kbd> <kbd>D</kbd> <kbd>L</kbd> <kbd>R</kbd> <kbd>F</kbd> <kbd>B</kbd> 外层 · <kbd>M</kbd> <kbd>E</kbd> <kbd>S</kbd> 中层 · <kbd>X</kbd> <kbd>Y</kbd> <kbd>Z</kbd> 整体转动 · 加 <kbd>Shift</kbd> 为逆时针 · <kbd>Ctrl/⌘</kbd>+<kbd>Z</kbd> 撤销</p>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>灵感来自 X 上 <a href="https://x.com/UnicornBitcoin/status/2107652690113339684" target="_blank" rel="noopener">@UnicornBitcoin 分享的动画</a>：「用图论揭示魔方的底层逻辑」。</span>
+      <span>零依赖 · Canvas 2D · <a href="https://github.com/linqizhe07/rubiks-graph-simulator" target="_blank" rel="noopener">源码</a></span>
+    </footer>
+  </div>
+
+  <script src="js/cube.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/graph-view.js"></script>
+  <script src="js/cube3d-view.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
