@@ -52,6 +52,7 @@
     let drag = null;
     let model = null, N = 3, unit = 1, geo = [], faceSlots = [];
     let labelsOn = true;
+    let insetBottom = 0; // CSS px：给面板底部的提示卡让出的高度
 
     // ---------- 几何：每张贴纸是一个圆角方块 ----------
     function setModel(m) {
@@ -88,10 +89,20 @@
       H = Math.max(1, Math.round(rect.height * dpr));
       canvas.width = W;
       canvas.height = H;
-      const availH = Math.max(1, H - 26 * dpr); // 给底部说明文字留位置
+      layout();
+    }
+    function layout() {
+      const availH = Math.max(1, H - (26 + insetBottom) * dpr); // 给底部说明文字（和提示卡）留位置
       scale = Math.min(W, availH) / 6;
       cx = W / 2;
       cy = availH / 2 - 0.08 * scale;
+    }
+    function setInsetBottom(px) {
+      px = Math.max(0, Math.round(px));
+      if (px === insetBottom) return false;
+      insetBottom = px;
+      layout();
+      return true;
     }
 
     function project(M, pts, n) {
@@ -356,7 +367,7 @@
     canvas.addEventListener('dblclick', resetView);
 
     return {
-      resize, render, update, setModel, resetView,
+      resize, render, update, setModel, resetView, setInsetBottom,
       setLabels(on) { labelsOn = on; },
       set onViewChange(fn) { onView = fn; },
     };

@@ -7,7 +7,7 @@
   <meta name="description" content="把魔方画成一张图：节点是贴纸，圆环是层，每一次转动都是圆环上的一次置换。支持 2–7 阶，附新手引导教学，高帧率 Canvas 动画，零依赖。">
   <meta name="theme-color" content="#F3F0E8">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23A69F95' stroke-width='3'%3E%3Ccircle cx='32' cy='24' r='17'/%3E%3Ccircle cx='23' cy='39' r='17'/%3E%3Ccircle cx='41' cy='39' r='17'/%3E%3C/g%3E%3Ccircle cx='32' cy='14' r='5' fill='%23FCB43C' stroke='%233C342D' stroke-width='2'/%3E%3Ccircle cx='14' cy='45' r='5' fill='%232C6749' stroke='%233C342D' stroke-width='2'/%3E%3Ccircle cx='50' cy='45' r='5' fill='%23F88B30' stroke='%233C342D' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20261008c">
 </head>
 <body>
   <div class="app">
@@ -47,14 +47,31 @@
       <section class="panel graph-panel">
         <canvas id="graph" role="img" data-i18n-attr="aria-label:aria.graph"></canvas>
         <div class="caption" id="hint">点击节点转动它所在的面 · 点击圆环转动这一层 · 拖动节点沿圆环转动 · Shift / 右键反向</div>
+        <div class="hint-card" id="hintCard" hidden aria-live="polite">
+          <div class="hc-head">
+            <span class="hc-title" id="hcTitle"></span>
+            <button class="hc-close" id="hcClose" type="button" data-i18n-attr="aria-label:hc.close;title:hc.close">×</button>
+          </div>
+          <div class="hc-move-row" id="hcMoveRow">
+            <span class="hc-move" id="hcMove"></span>
+            <span class="hc-what" id="hcWhat"></span>
+          </div>
+          <div class="hc-key" id="hcKey"></div>
+          <div class="hc-ctx" id="hcCtx"></div>
+          <div class="hc-prog" id="hcProg"></div>
+          <div class="hc-actions">
+            <button class="btn primary small" id="hcDo" type="button"></button>
+            <button class="btn small" id="hcMore" type="button"></button>
+            <span class="hc-feedback" id="hcFeedback"></span>
+          </div>
+        </div>
       </section>
     </main>
 
     <section class="controls">
       <div class="toolbar">
         <div class="btn-row">
-          <button id="btnTutor" class="btn accent" type="button" aria-pressed="false" data-i18n="btn.tutor" data-i18n-attr="title:btn.tutor.title">新手教学</button>
-          <span class="sep"></span>
+          <button id="btnHint" class="btn accent" type="button" aria-pressed="false" data-i18n="btn.hint" data-i18n-attr="title:btn.hint.title">💡 提示</button>
           <button id="btnScramble" class="btn primary" type="button" data-i18n="btn.scramble">打乱</button>
           <button id="btnSolve" class="btn" type="button" data-i18n="btn.solve" data-i18n-attr="title:btn.solve.title">还原</button>
           <button id="btnDemo" class="btn" type="button" data-i18n="btn.demo" data-i18n-attr="title:btn.demo.title">演示</button>
@@ -62,6 +79,8 @@
           <button id="btnUndo" class="btn" type="button" title="Ctrl/⌘ + Z" data-i18n="btn.undo">撤销</button>
           <button id="btnRedo" class="btn" type="button" title="Ctrl/⌘ + Shift + Z" data-i18n="btn.redo">重做</button>
           <button id="btnReset" class="btn ghost" type="button" data-i18n="btn.reset">重置</button>
+          <span class="sep"></span>
+          <button id="btnTutor" class="btn" type="button" aria-pressed="false" data-i18n="btn.tutor" data-i18n-attr="title:btn.tutor.title">入门教程</button>
         </div>
         <label class="speed">
           <span data-i18n="speed">速度</span>
@@ -142,13 +161,13 @@
     </div>
   </aside>
 
-  <script src="js/i18n.js"></script>
-  <script src="js/cube.js"></script>
-  <script src="js/graph.js"></script>
-  <script src="js/solver.js"></script>
-  <script src="js/graph-view.js"></script>
-  <script src="js/cube3d-view.js"></script>
-  <script src="js/tutorial.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/i18n.js?v=20261008c"></script>
+  <script src="js/cube.js?v=20261008c"></script>
+  <script src="js/graph.js?v=20261008c"></script>
+  <script src="js/solver.js?v=20261008c"></script>
+  <script src="js/graph-view.js?v=20261008c"></script>
+  <script src="js/cube3d-view.js?v=20261008c"></script>
+  <script src="js/tutorial.js?v=20261008c"></script>
+  <script src="js/app.js?v=20261008c"></script>
 </body>
 </html>

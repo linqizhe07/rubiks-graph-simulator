@@ -433,5 +433,113 @@
     return { nextStep, solveAll, progress, STAGES };
   }
 
-  return { create, STAGES };
+  /**
+   * 二阶魔方的最短解（半圈也算一步，最多 11 步）。
+   * 先整体转动到「左后下角就在自己位置上」的朝向，于是只用 R、U、F 三个面就能还原；
+   * 再从还原状态和当前状态两头各做 6 层广度搜索，在中间相遇。最后把转法换算回原来的朝向。
+   */
+  const optimalCache = new Map();
+  function createOptimal2(model) {
+    if (model.N !== 2) throw new Error('只适用于二阶魔方');
+    if (optimalCache.has(model)) return optimalCache.get(model);
+    const S = model.SLOTS;
+    const P = str => model.parse(str);
+    const keyOf = st => { let k = ''; for (let i = 0; i < st.length; i++) k += model.colorOf(st[i]); return k; };
+    const permKey = p => Array.prototype.join.call(p, ',');
+
+    const ALL = [];
+    for (let f = 0; f < 6; f++) {
+      for (const amount of [1, -1, 2]) {
+        const m = model.faceMove(f, amount);
+        ALL.push({ face: f, move: m, perm: model.movePerm(m) });
+      }
+    }
+    const byPerm = new Map(ALL.map(x => [permKey(x.perm), x.move]));
+    const RUF = ALL.filter(x => x.face === R || x.face === U || x.face === F);
+    const inverseIdx = RUF.map(x => {
+      const k = permKey(model.inverse(x.perm));
+      return RUF.findIndex(y => permKey(y.perm) === k);
+    });
+    const ROTS = [];
+    for (const a of ['', 'x', 'x2', "x'", 'z', "z'"]) {
+      for (const b of ['', 'y', 'y2', "y'"]) ROTS.push(model.seqPerm(P(`${a} ${b}`.trim())));
+    }
+    const DBL = model.CUBIES.find(c => [D, B, L].every(f => c.slots.some(s => S[s].face === f)));
+    const homeDBL = st => DBL.slots.every(s => model.colorOf(st[s]) === S[s].face);
+    const DEPTH = 6;
+
+    // 从还原状态出发的反向表：状态 → { 距离, 朝还原方向走的那一步 }
+    const back = new Map();
+    const solved = model.solvedState();
+    back.set(keyOf(solved), { d: 0, toward: -1 });
+    let frontier = [solved];
+    for (let d = 0; d < DEPTH; d++) {
+      const next = [];
+      for (const st of frontier) {
+        for (let i = 0; i < RUF.length; i++) {
+          const nst = model.applyPerm(st, RUF[i].perm);
+          const k = keyOf(nst);
+          if (back.has(k)) continue;
+          back.set(k, { d: d + 1, toward: inverseIdx[i] });
+          next.push(nst);
+        }
+      }
+      frontier = next;
+    }
+
+    function solveNormalized(start) {
+      const startKey = keyOf(start);
+      const seen = new Map([[startKey, null]]);
+      let layer = [{ st: start, key: startKey }];
+      let best = null;
+      for (let df = 0; df <= DEPTH && (!best || best.len > df); df++) {
+        for (const node of layer) {
+          const hit = back.get(node.key);
+          if (hit && (!best || df + hit.d < best.len)) best = { len: df + hit.d, key: node.key, st: node.st };
+        }
+        if (df === DEPTH) break;
+        const next = [];
+        for (const node of layer) {
+          for (let i = 0; i < RUF.length; i++) {
+            const nst = model.applyPerm(node.st, RUF[i].perm);
+            const k = keyOf(nst);
+            if (seen.has(k)) continue;
+            seen.set(k, { parent: node.key, move: i });
+            next.push({ st: nst, key: k });
+          }
+        }
+        layer = next;
+      }
+      if (!best) return null;
+      const forward = [];
+      for (let k = best.key; seen.get(k); k = seen.get(k).parent) forward.unshift(seen.get(k).move);
+      let st = best.st;
+      const backward = [];
+      for (let info = back.get(keyOf(st)); info && info.toward >= 0; info = back.get(keyOf(st))) {
+        backward.push(info.toward);
+        st = model.applyPerm(st, RUF[info.toward].perm);
+      }
+      return forward.concat(backward);
+    }
+
+    function solve(state) {
+      if (model.isSolved(state)) return [];
+      for (const rot of ROTS) {
+        const norm = model.applyPerm(state, rot);
+        if (!homeDBL(norm)) continue;
+        const path = solveNormalized(norm);
+        if (!path) return null;
+        // 朝向换回来：先 rot 再 m' 等于先 m 再 rot，所以 m = rot · m' · rot⁻¹
+        const inv = model.inverse(rot);
+        return path.map(i => byPerm.get(permKey(model.compose(model.compose(rot, RUF[i].perm), inv))));
+      }
+      return null;
+    }
+
+    const api = { solve };
+    optimalCache.set(model, api);
+    return api;
+  }
+
+  return { create, createOptimal2, STAGES };
 });

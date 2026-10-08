@@ -101,6 +101,24 @@ test('讲解文字：中英文词典键一致，所有步骤在两种语言下�
   I18N.setLang('zh');
 });
 
+test('二阶提示：随机打乱（含整体转动和 L/D/B）都给出不超过 11 步的最短解', () => {
+  const C2 = RubikCube.create(2);
+  const opt = RubikSolver.createOptimal2(C2);
+  const apply2 = (st, seq) => { for (const m of seq) st = C2.applyMove(st, m); return st; };
+  assert.deepEqual(opt.solve(C2.solvedState()), []);
+  assert.equal(opt.solve(apply2(C2.solvedState(), C2.parse('R'))).length, 1);
+  assert.equal(opt.solve(apply2(C2.solvedState(), C2.parse("x R U"))).length, 2);
+  assert.equal(opt.solve(apply2(C2.solvedState(), C2.parse("L D'"))).length, 2);
+  const extra = ['', 'x', 'y2', 'z L', 'x y D2 B', "L2 D B'"];
+  for (let k = 0; k < 60; k++) {
+    let st = apply2(C2.solvedState(), C2.scramble(20, rng));
+    st = apply2(st, C2.parse(extra[k % extra.length]));
+    const sol = opt.solve(st);
+    assert.ok(sol && sol.length <= 11, `第 ${k} 个：${sol && sol.length} 步`);
+    assert.ok(C2.isSolved(apply2(st, sol)), `第 ${k} 个没有还原`);
+  }
+});
+
 test('层先法：每一步都很快算出来', () => {
   const t0 = Date.now();
   let n = 0;

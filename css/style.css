@@ -303,6 +303,65 @@ input[type="checkbox"] { accent-color: var(--dark); width: 15px; height: 15px; m
 }
 .foot a { color: var(--ink-2); }
 
+/* ---------- 提示卡（浮在图的左上角） ---------- */
+.hint-card {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: min(300px, calc(100% - 24px));
+  padding: 12px 14px;
+  background: rgba(255, 253, 248, 0.97);
+  border: 1px solid #D9CFF7;
+  border-radius: 16px;
+  box-shadow: 0 14px 40px -18px rgba(42, 38, 33, 0.45);
+  font-size: 13.5px;
+  z-index: 5;
+}
+.hint-card[hidden] { display: none; }
+/* 宽屏：放在 3D 面板下部，3D 魔方相应上移缩小 */
+.cube-panel .hint-card { top: auto; left: 12px; right: 12px; bottom: 34px; width: auto; min-height: 172px; }
+.hc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hc-title { font-weight: 700; font-size: 14px; color: var(--guide-ink); }
+.hc-close {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.hc-close:hover { color: var(--ink); background: var(--btn-hover); }
+.hc-move-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.hc-move-row[hidden] { display: none; }
+.hc-move {
+  flex: none;
+  min-width: 54px;
+  padding: 2px 12px;
+  border-radius: 10px;
+  background: var(--guide);
+  color: #fff;
+  font: 700 24px/1.3 var(--mono);
+  text-align: center;
+  box-shadow: 0 0 0 4px rgba(103, 65, 217, 0.16);
+  animation: now-pulse 1.15s ease-in-out infinite;
+}
+.hc-what { font-size: 14.5px; font-weight: 600; color: var(--ink); line-height: 1.4; }
+.hc-key { margin-top: 6px; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.hc-key[hidden] { display: none; }
+.hc-ctx { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); color: var(--ink-2); font-size: 12.5px; line-height: 1.55; }
+.hc-prog { margin-top: 2px; color: var(--muted); font-size: 12px; }
+.hc-prog:empty { display: none; }
+.hc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.hc-actions .btn[hidden] { display: none; }
+.btn.small { height: 30px; padding: 0 12px; border-radius: 9px; font-size: 13px; }
+.hc-feedback { font-size: 12.5px; color: var(--muted); }
+.hc-feedback.ok { color: var(--ok); }
+.hc-feedback.warn { color: #B35C00; }
+
 /* ---------- 新手教学面板（固定在底部） ---------- */
 .coach {
   position: fixed;
@@ -387,7 +446,7 @@ input[type="checkbox"] { accent-color: var(--dark); width: 15px; height: 15px; m
 .teaching .stage { height: clamp(360px, calc(100vh - var(--coach-h, 0px) - 150px), 720px); }
 
 @media (prefers-reduced-motion: reduce) {
-  .coach .chip.now { animation: none; }
+  .coach .chip.now, .hc-move { animation: none; }
 }
 
 /* ---------- 窄屏 ---------- */
@@ -411,6 +470,8 @@ input[type="checkbox"] { accent-color: var(--dark); width: 15px; height: 15px; m
   .coach-actions .btn { flex: 1 1 40%; }
   .coach-feedback { flex-basis: 100%; }
   .teaching .stage { height: auto; }
+  /* 窄屏上提示卡贴在屏幕底部，不挡住图 */
+  .hint-card, .cube-panel .hint-card { position: fixed; top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; min-height: 0; z-index: 45; }
   /* 教学时让图正好填满面板上方的空间，边看边跟着转 */
   .teaching .graph-panel { height: clamp(280px, calc(100vh - var(--coach-h, 0px) - 24px), 640px); }
 }

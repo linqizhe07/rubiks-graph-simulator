@@ -32,6 +32,7 @@
     let dpr = 1, W = 1, H = 1, scale = 1, ox = 0, oy = 0, half = 0;
     let labelsOn = true, labelPx = 10, knockPx = 6, labelAll = true;
     let trailN = 14, eBuf = new Float64Array(15);
+    let insetLeft = 0; // CSS px：给浮在左侧的提示卡让出的宽度
 
     function setGraph(graph) {
       G = graph;
@@ -59,8 +60,9 @@
       const cap = canvas.parentElement && canvas.parentElement.querySelector('.caption');
       const capSpace = Math.max(CAPTION_SPACE, cap ? cap.offsetHeight + 14 : 0);
       const availH = Math.max(1, H - capSpace * dpr);
-      scale = Math.min(W / bw, availH / bh);
-      ox = W / 2 - ((b.x0 + b.x1) / 2) * scale;
+      const left = insetLeft * dpr, availW = Math.max(1, W - left);
+      scale = Math.min(availW / bw, availH / bh);
+      ox = left + availW / 2 - ((b.x0 + b.x1) / 2) * scale;
       oy = availH / 2 - ((b.y0 + b.y1) / 2) * scale;
       // 层名：放得下就全部标，放不下只标外层与中层
       const fit = Math.min(0.085, 0.375 * G.GAP) * scale;
@@ -353,8 +355,16 @@
     }
     // 当前阶数下「贴纸编号」是否放得下
     const namesFit = () => !!G && 0.62 * G.DOT_R * scale >= 7 * dpr;
+    // 左侧让出 px 宽度；返回是否有变化
+    function setInsetLeft(px) {
+      px = Math.max(0, Math.round(px));
+      if (px === insetLeft) return false;
+      insetLeft = px;
+      layout();
+      return true;
+    }
 
-    return { resize, render, toGraph, pxToUnits, setLayerLabels, setGraph, namesFit };
+    return { resize, render, toGraph, pxToUnits, setLayerLabels, setGraph, namesFit, setInsetLeft };
   }
 
   window.createGraphView = createGraphView;

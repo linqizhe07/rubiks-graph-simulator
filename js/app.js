@@ -77,6 +77,7 @@
       const q = new URLSearchParams(location.search);
       if (N === 3) q.delete('n'); else q.set('n', N);
       q.delete('learn');
+      q.delete('hint');
       const s = q.toString();
       window.history.replaceState(null, '', location.pathname + (s ? '?' + s : ''));
     } catch (_) { /* file:// 等环境 */ }
@@ -447,6 +448,8 @@
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY') { e.preventDefault(); redo(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    if (e.code === 'KeyH') { e.preventDefault(); toggleHint(); return; }
+    if (e.code === 'Escape' && tutor.active) { tutor.stop(); return; }
     const digit = /^Digit([2-9])$/.exec(e.code);
     if (digit && +digit[1] <= N && N >= 3) {
       prefix = +digit[1];
@@ -538,6 +541,7 @@
   bindToggle('optNames', 'names');
   bindToggle('opt3d', 'show3d', () => {
     document.body.classList.toggle('no3d', !settings.show3d);
+    updateGraphInset();
   });
   bindToggle('optArrows', 'arrows', () => buildArrows());
   document.body.classList.toggle('no3d', !settings.show3d);
@@ -670,12 +674,13 @@
     needGraph = need3d = true;
   }
 
-  // ---------- 新手教学 ----------
+  // ---------- 提示与入门教程 ----------
   const coach = $('coach');
   tutor = window.createTutorial({
     get N() { return N; },
     model: () => model,
     logical: () => logical,
+    history: () => history,
     isSolved: () => model.isSolved(logical),
     busy: () => !!anim || queue.length > 0,
     playMove: m => doMove(m, 'tutor'),
@@ -689,10 +694,14 @@
       needGraph = need3d = true;
     },
     resetView: () => cubeView.resetView(),
-    layoutChanged: () => syncCoachSpace(),
+    layoutChanged: () => {
+      syncCoachSpace();
+      updateGraphInset();
+      $('btnHint').setAttribute('aria-pressed', String(!!tutor && tutor.active && tutor.view === 'card'));
+      $('btnTutor').setAttribute('aria-pressed', String(!!tutor && tutor.active && tutor.view === 'coach'));
+    },
     teaching: on => {
       document.body.classList.toggle('teaching', on);
-      $('btnTutor').setAttribute('aria-pressed', String(on));
       syncCoachSpace();
       if (on) {
         // 窄屏：把图滚到顶上，正好落在教学面板上方；宽屏：回到页面顶部
@@ -711,8 +720,36 @@
     secondary: $('coachSecondary'),
     feedback: $('coachFeedback'),
     close: $('coachClose'),
+  }, {
+    root: $('hintCard'),
+    title: $('hcTitle'),
+    moveRow: $('hcMoveRow'),
+    move: $('hcMove'),
+    what: $('hcWhat'),
+    key: $('hcKey'),
+    ctx: $('hcCtx'),
+    prog: $('hcProg'),
+    doBtn: $('hcDo'),
+    more: $('hcMore'),
+    close: $('hcClose'),
+    feedback: $('hcFeedback'),
   });
-  $('btnTutor').addEventListener('click', () => (tutor.active ? tutor.stop() : tutor.start()));
+  const toggleHint = () => (tutor.active && tutor.view === 'card' ? tutor.stop() : tutor.showHint());
+  $('btnHint').addEventListener('click', toggleHint);
+  $('btnTutor').addEventListener('click', () => (tutor.active && tutor.view === 'coach' ? tutor.stop() : tutor.startTutorial()));
+  // 提示卡的位置：宽屏放在 3D 面板下部（3D 魔方让出高度）；关掉 3D 视图时浮在图的左上角（图向右让位）；
+  // 窄屏由 CSS 固定在屏幕底部
+  const narrowMQ = matchMedia('(max-width: 860px)');
+  function updateGraphInset() {
+    const cardEl = $('hintCard');
+    const host = settings.show3d ? cubeCanvas.parentElement : graphCanvas.parentElement;
+    if (cardEl.parentElement !== host) host.appendChild(cardEl);
+    const shown = !cardEl.hidden && !narrowMQ.matches;
+    const inCube = shown && settings.show3d;
+    const changedCube = cubeView.setInsetBottom(inCube ? cardEl.offsetHeight + 14 : 0);
+    const changedGraph = graphView.setInsetLeft(shown && !inCube ? cardEl.offsetWidth + 20 : 0);
+    if (changedCube || changedGraph) { needGraph = need3d = true; render(); }
+  }
   // 教学面板固定在底部：给页面留出同样高度的空白
   function syncCoachSpace() {
     document.documentElement.style.setProperty('--coach-h', coach.hidden ? '0px' : coach.offsetHeight + 'px');
@@ -764,6 +801,7 @@
   function resizeAll() {
     graphView.resize();
     cubeView.resize();
+    updateGraphInset();
     const fits = graphView.namesFit();
     $('optNames').disabled = !fits;
     needGraph = need3d = true;
@@ -786,7 +824,8 @@
   setOrder(ORDERS.includes(startN) ? startN : 3);
   graphView.setLayerLabels(settings.labels);
   watchDpr();
-  if (qs.has('learn')) tutor.start();
+  if (qs.has('learn')) tutor.startTutorial();
+  else if (qs.has('hint')) tutor.showHint();
   requestAnimationFrame(frame);
 
   // 便于调试：rubikApp.tick(t) 可用合成时间戳手动推进一帧
